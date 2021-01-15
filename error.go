@@ -3,6 +3,7 @@ package errors
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // Error in recurerr is built with scope, or hierarchy in mind. This struct has
@@ -33,6 +34,20 @@ func (e *Error) Unwrap() error {
 		return e.underlying[0]
 	}
 	return nil
+}
+
+func (e *Error) Error() string {
+	var sb strings.Builder
+	sb.WriteString(e.err.Error())
+	sb.WriteString(": [")
+	for i, err := range e.underlying {
+		if i > 0 {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(err.Error())
+	}
+	sb.WriteString("]")
+	return sb.String()
 }
 
 func Is(s error, expect error) bool {

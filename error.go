@@ -39,14 +39,19 @@ func (e *Error) Unwrap() error {
 func (e *Error) Error() string {
 	var sb strings.Builder
 	sb.WriteString(e.err.Error())
-	sb.WriteString(": [")
+	sb.WriteString(": ")
+	if len(e.underlying) > 1 {
+		sb.WriteByte('[')
+	}
 	for i, err := range e.underlying {
 		if i > 0 {
 			sb.WriteString(", ")
 		}
 		sb.WriteString(err.Error())
 	}
-	sb.WriteString("]")
+	if len(e.underlying) > 1 {
+		sb.WriteByte(']')
+	}
 	return sb.String()
 }
 

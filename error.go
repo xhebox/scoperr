@@ -18,7 +18,11 @@ type Error struct {
 // New accepts the parent error, following optional children errors,
 // following optional format strings. Remaining arguments are discarded.
 // That is <err> [(err1, err2, ..)] [(format, args)].
-func New(err error, args ...interface{}) error {
+func New(nerr interface{}, args ...interface{}) error {
+	err, ok := nerr.(error)
+	if !ok {
+		err = fmt.Errorf("%v", nerr)
+	}
 	if len(args) == 0 {
 		return err
 	}

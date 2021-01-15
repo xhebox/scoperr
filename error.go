@@ -10,22 +10,44 @@ import (
 // a "parrent" error and its "children" errors: children errors belong to the
 // parent error.
 type Error struct {
-	err error
+	err        error
+	message    string
 	underlying []error
 }
 
-func New(err error, underlying...error) error {
-	return &Error{
-		err: err,
-		underlying: underlying,
+// New accepts the parent error, following optional children errors,
+// following optional format strings. Remaining arguments are discarded.
+// That is <err> [(err1, err2, ..)] [(format, args)].
+func New(err error, args ...interface{}) error {
+	if len(args) == 0 {
+		return err
 	}
+	underlying := []error{}
+	idx := len(args)
+	for i, arg := range args {
+		if e, ok := arg.(error); !ok {
+			idx = i
+			break
+		} else {
+			underlying = append(underlying, e)
+		}
+	}
+	ret := &Error{
+		err,
+		"",
+		underlying,
+	}
+	if idx < len(args) {
+		if fmtstr, ok := args[idx].(string); ok {
+			ret.message = fmt.Sprintf(fmtstr, args[idx+1:]...)
+		}
+	}
+	return ret
 }
 
-func Newf(err error, format string, args...interface{}) error {
-	return &Error{
-		err: err,
-		underlying: []error{fmt.Errorf(format, args...)},
-	}
+// Message returns comments on the parent error.
+func (e *Error) Message() string {
+	return e.message
 }
 
 // Unwrap is for compatibility to the official errors.
@@ -36,10 +58,12 @@ func (e *Error) Unwrap() error {
 	return nil
 }
 
+// Error implements error.
 func (e *Error) Error() string {
 	var sb strings.Builder
 	sb.WriteString(e.err.Error())
 	sb.WriteString(": ")
+	sb.WriteString(e.message)
 	if len(e.underlying) > 1 {
 		sb.WriteByte('[')
 	}
